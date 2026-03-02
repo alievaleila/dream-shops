@@ -5,7 +5,8 @@ import com.dailycodework.dream_shops.model.Category;
 import com.dailycodework.dream_shops.model.Product;
 import com.dailycodework.dream_shops.repository.CategoryRepository;
 import com.dailycodework.dream_shops.repository.ProductRepository;
-import com.dailycodework.dream_shops.request.AddProductRequest;
+import com.dailycodework.dream_shops.request.product.AddProductRequest;
+import com.dailycodework.dream_shops.request.product.UpdateProductRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -58,13 +59,25 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    public void updateProductById(Product product, Long productId) {
+    public Product updateProductById(UpdateProductRequest request, Long productId) {
+        return productRepository.findById(productId)
+                .map(existingProduct->updateExistingProduct(existingProduct,request))
+                .map(productRepository::save)
+                .orElseThrow(()-> new ProductNotFoundException("Product not found!"));
 
     }
 
-//    private Product updateExistingProduct(Product existingProduct,UpdateProductRequest request){
-//
-//    }
+    private Product updateExistingProduct(Product existingProduct, UpdateProductRequest request){
+        existingProduct.setName(request.getName());
+        existingProduct.setBrand(request.getBrand());
+        existingProduct.setPrice(request.getPrice());
+        existingProduct.setInventory(request.getInventory());
+        existingProduct.setDescription(request.getDescription());
+
+        Category category=categoryRepository.findByName(request.getCategory().getName());
+        existingProduct.setCategory(category);
+        return existingProduct;
+    }
 
     @Override
     public void deleteProductById(Long id) {
@@ -72,7 +85,6 @@ public class ProductService implements IProductService {
                 .ifPresentOrElse(productRepository::delete, () -> {
                     throw new ProductNotFoundException("Product not found!");
                 });
-
     }
 
     @Override
